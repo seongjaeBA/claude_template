@@ -1,0 +1,36 @@
+# {PROJECT_NAME}
+
+## Domain
+{PURPOSE_ONE_LINE}
+Entities: {ENTITIES}
+DoD: {DOD}
+
+## Stack
+{LANGUAGE} / {FRAMEWORK} / {DB} / {DEPLOYMENT}
+Package manager: {PKG_MANAGER}
+Test: {TEST_TOOLS}
+
+## Dev Workflow
+{SOLO_OR_TEAM} | PR: {PR_POLICY} | CI/CD: {CICD}
+Quality: {LINTER} + {FORMATTER}
+
+## Docs
+- Domain: .claude/docs/domain.md
+- Constraints: .claude/docs/constraints.md
+- Local checks: .claude/docs/local-checks.md
+- Env validation: .claude/docs/env-validation.md
+{BACKEND_LINE}
+{FRONTEND_LINE}
+
+## Rules
+- Common: ~/.claude/rules/
+- Stack: .claude/rules/coding-style.md
+- Agents: .claude/rules/agents.md
+
+## Agent Memory
+- Index: .claude/agent-memory/agents.md
+- Domain agents: separate files in .claude/agent-memory/
+- Protocol: Read before start → Work → Write updates after completion
+
+## Legacy
+Decisions: .claude/legacy/ — read before making architectural changes.

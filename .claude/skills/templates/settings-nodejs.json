@@ -1,0 +1,38 @@
+{
+  "defaultMode": "plan",
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(node *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(pnpm *)",
+      "Bash(yarn *)",
+      "Bash(bun *)",
+      "Write",
+      "Edit",
+      "Read"
+    ],
+    "deny": []
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx eslint --fix \"$CLAUDE_TOOL_INPUT_FILE\" 2>/dev/null; npx prettier --write \"$CLAUDE_TOOL_INPUT_FILE\" 2>/dev/null",
+            "matchFiles": "*.{ts,tsx,js,jsx}",
+            "_comment": "ESLint+Prettier 조합일 때 사용. Biome 사용 시 아래 명령으로 교체: npx biome check --write \"$CLAUDE_TOOL_INPUT_FILE\""
+          }
+        ]
+      }
+    ]
+  },
+  "_linter_variants": {
+    "biome": "npx biome check --write \"$CLAUDE_TOOL_INPUT_FILE\" 2>/dev/null",
+    "oxlint+prettier": "npx oxlint \"$CLAUDE_TOOL_INPUT_FILE\" 2>/dev/null; npx prettier --write \"$CLAUDE_TOOL_INPUT_FILE\" 2>/dev/null",
+    "eslint+prettier": "npx eslint --fix \"$CLAUDE_TOOL_INPUT_FILE\" 2>/dev/null; npx prettier --write \"$CLAUDE_TOOL_INPUT_FILE\" 2>/dev/null"
+  }
+}

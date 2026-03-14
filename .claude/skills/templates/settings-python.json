@@ -1,0 +1,31 @@
+{
+  "defaultMode": "plan",
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(python *)",
+      "Bash(pip *)",
+      "Bash(pytest *)",
+      "Bash(ruff *)",
+      "Bash(black *)",
+      "Write",
+      "Edit",
+      "Read"
+    ],
+    "deny": []
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ruff check --fix \"$CLAUDE_TOOL_INPUT_FILE\" 2>/dev/null; black \"$CLAUDE_TOOL_INPUT_FILE\" 2>/dev/null",
+            "matchFiles": "*.py"
+          }
+        ]
+      }
+    ]
+  }
+}
