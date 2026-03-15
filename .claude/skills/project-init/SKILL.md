@@ -95,6 +95,10 @@ Replace `{linter}` and `{formatter}` with interview answers.
 
 ### .claude/rules/agents.md
 Read `templates/rules/agents-{stack}.md` and fill stack-specific values.
+**필수 포함 항목** (템플릿에 이미 존재, 절대 제거 금지):
+- Auto-Dispatch 테이블: plan/legacy 트리거 행
+- Plan 관리 규칙: 자동 생성 트리거, 파일 형식, 생명주기
+- Legacy 규칙: 자동 생성 트리거, 파일명 규칙, 작성 의무
 
 ### .claude/rules/coding-style.md
 Read `templates/rules/coding-{stack}.md` and adapt linter/formatter choices from interview.
@@ -138,6 +142,11 @@ Read `templates/env-validation.md` and fill with chosen approach.
 
 ### .claude/legacy/_template.md
 Copy `templates/legacy/_template.md` as-is.
+Legacy 디렉토리는 프로젝트의 의사결정 기록 저장소:
+- 파일명: `{YYYYMMDD}-{NNN}-{slug}.md`
+- 아키텍처 변경, 라이브러리 교체, 패턴 변경 시 **커밋 전에** 반드시 작성
+- **세션 시작 시**: 기존 legacy 문서 Read — 과거 결정사항 파악 후 작업
+- `_template.md` 형식 준수
 
 ### .claude/agent-memory/agents.md
 Read `templates/agent-memory-{stack}.md` and fill stack-specific agents.
@@ -150,8 +159,12 @@ Create one file per identified domain agent from interview.
 **Backend projects**: create per-service agents (e.g., `auth-service.md`, `payment-service.md`).
 Fill with initial design decisions, key files, and empty pitfalls section.
 
-### .claude/plans/ (empty directory)
-Claude creates plan files here during work. No initial file.
+### .claude/plans/
+Plan 파일 저장소. `init-roadmap.md` 외에는 작업 중 자동 생성.
+- 파일명: `{YYYYMMDD}-{slug}.md`
+- 상태 관리: `draft` → `in-progress` → `done`
+- `done` 상태 plan은 삭제하지 않음 — 프로젝트 이력으로 보존
+- **세션 시작 시**: 기존 `in-progress` plan 파일 Read 후 이어서 작업
 
 ### .claude/docs/workflow/ (always generate)
 - `team-workflow.md` — 팀 작업 규칙:
@@ -171,7 +184,19 @@ Claude creates plan files here during work. No initial file.
 
 ---
 
-## Post-creation
+## Post-creation Checklist
+
+생성 완료 후 다음을 검증:
+
+1. **CLAUDE.md** — `## Plans` / `## Legacy` 섹션 존재 + Read 프로토콜 명시
+2. **agents.md** — Auto-Dispatch에 plan/legacy 트리거 행 존재
+3. **agents.md** — Plan 관리 규칙 + Legacy 규칙 섹션 존재
+4. **`.claude/plans/`** — `init-roadmap.md` 생성됨
+5. **`.claude/legacy/`** — `_template.md` 생성됨
+
+누락 항목 발견 시 즉시 생성.
+
+## Post-creation Report
 
 Report all created files with one-line description each.
 Show the roadmap summary from `.claude/plans/init-roadmap.md`.

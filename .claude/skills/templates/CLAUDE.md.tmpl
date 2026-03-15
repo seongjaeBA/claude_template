@@ -32,5 +32,11 @@ Quality: {LINTER} + {FORMATTER}
 - Domain agents: separate files in .claude/agent-memory/
 - Protocol: Read before start → Work → Write updates after completion
 
+## Plans
+- Directory: .claude/plans/
+- Protocol: 세션 시작 시 `in-progress` plan Read → 작업 → 체크리스트 업데이트
+- 3+ 파일 변경 기능은 plan 생성 후 작업 시작
+
 ## Legacy
-Decisions: .claude/legacy/ — read before making architectural changes.
+- Decisions: .claude/legacy/ — read before making architectural changes.
+- Protocol: 세션 시작 시 기존 legacy Read → 아키텍처 변경 시 커밋 전 legacy 작성 필수
