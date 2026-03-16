@@ -1,0 +1,14 @@
+{
+    "platforms": {
+        "claude": "~/.claude/skills",
+        "gemini": "~/.gemini/skills"
+    },
+    "ignore_list": [
+        ".DS_Store",
+        "README.md"
+    ],
+    "options": {
+        "create_backup": true,
+        "force_symlink": true
+    }
+}
