@@ -16,7 +16,29 @@
     "deny": []
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "_comment": "Orchestrator 코드 직접 편집 차단. serena activate_project 후 마커 파일이 있으면 허용.",
+            "command": "FILE=\"$CLAUDE_TOOL_INPUT_FILE\"; case \"$FILE\" in *.ts|*.tsx|*.js|*.jsx|*.css) MARKER=\"$HOME/.claude/tmp/serena-active-$CLAUDE_SESSION_ID\"; if [ ! -f \"$MARKER\" ]; then echo ''; echo '⛔ ORCHESTRATOR 코드 편집 차단'; echo ''; echo '코드 파일은 반드시 sub-agent에게 위임하세요:'; echo \"  파일: $FILE\"; echo ''; echo '  Agent tool + isolation: worktree 사용 필수'; echo '  편집 전 Serena 활성화: mcp__plugin_serena_serena__activate_project'; exit 2; fi;; esac"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
+      {
+        "matcher": "mcp__plugin_serena_serena__activate_project",
+        "hooks": [
+          {
+            "type": "command",
+            "_comment": "Serena 활성화 시 마커 파일 생성 → PreToolUse 훅 통과 허용",
+            "command": "mkdir -p ~/.claude/tmp && touch \"$HOME/.claude/tmp/serena-active-$CLAUDE_SESSION_ID\""
+          }
+        ]
+      },
       {
         "matcher": "Edit|Write",
         "hooks": [
