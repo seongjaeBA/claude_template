@@ -22,6 +22,20 @@ Ask each question **one at a time**. Wait for answer before proceeding.
 3. Key constraints / non-functional requirements
 4. Definition of Done
 
+### Stage 1.5: Reference & Design Direction (Frontend projects)
+*(Skip for backend-only. 나중에 언제든 `/reference-update`로 추가 가능)*
+
+5r. **Reference sites** — 벤치마크 URL 있나요? (없으면 skip)
+   - URL 제공 시: WebFetch로 분석 → `docs/references/` 에 저장
+   - 분석 항목: 레이아웃, 스크롤 패턴, 네비, 색상/타이포, 인터랙션, 프로젝트 구조(brief/detail)
+   - **반영할 패턴** vs **참고만 할 패턴** 명시 기록
+
+6r. **Design direction** — 키워드 or 무드보드? (미니멀, 다크, 글래스모피즘 등)
+
+7r. **Design priority** — 개발 순서 확인:
+   - 권장: **레이아웃 → 디자인 시스템 → 인터랙션 → 컴포넌트 → 콘텐츠**
+   - 컴포넌트부터 시작하면 전체 흐름이 깨지므로 레이아웃 우선 필수
+
 ### Stage 2: Dev Workflow
 5. Solo or team? (if team: size)
 6. PR / code review required?
@@ -95,10 +109,93 @@ Replace `{linter}` and `{formatter}` with interview answers.
 
 ### .claude/rules/agents.md
 Read `templates/rules/agents-{stack}.md` and fill stack-specific values.
-**필수 포함 항목** (템플릿에 이미 존재, 절대 제거 금지):
-- Auto-Dispatch 테이블: plan/legacy 트리거 행
-- Plan 관리 규칙: 자동 생성 트리거, 파일 형식, 생명주기
-- Legacy 규칙: 자동 생성 트리거, 파일명 규칙, 작성 의무
+
+**반드시 포함해야 하는 섹션 (템플릿에 없으면 직접 생성):**
+
+#### 1. 활성 팀 구성 테이블
+인터뷰에서 식별된 도메인 에이전트 + 아래 필수 에이전트:
+| Agent | 역할 | worktree | memory |
+|-------|------|----------|--------|
+| **main (orchestrator)** | 전체 조율, 유저 보고, 머지, 기록 관리 | - (메인) | - |
+| **{domain-agent-1}** | (인터뷰에서 결정) | ✅ | `.claude/agent-memory/{name}.md` |
+| **designer** | 디자인 시스템, 토큰, 시각 일관성 검증 | ✅ | - |
+| **record** | legacy/memory/plan 기록 자동 수행 | - (메인) | `.claude/agent-memory/agents.md` |
+| **code-reviewer** | 코드 리뷰 (lint, 패턴, 접근성) | ✅ | - |
+| **tdd-master-qa** | TDD TC 작성 + 커버리지 80%+ 검증 + QA | ✅ | `.claude/docs/testing/` |
+
+- `designer`는 프론트엔드 프로젝트에서만 포함
+- 백엔드 전용 시 `designer` 대신 `api-reviewer` 고려
+
+#### 2. Auto-Dispatch 트리거 테이블
+```markdown
+### Auto-Dispatch (유저가 요청 안해도 실행)
+| Context | Action |
+|---------|--------|
+| {domain} 작업 | `{domain-agent}` 디스패치 (memory 로드) |
+| 새 컴포넌트/색상/타이포 변경 | `designer` 디스패치 |
+| 코드 작성 완료 | `code-reviewer` 자동 실행 |
+| 결정/지시/완료 발생 | `record` 자동 실행 |
+| 구현 전 | `tdd-master-qa` 디스패치 (RED: TC 먼저) |
+| 구현 완료 후 | `tdd-master-qa` 디스패치 (GREEN + 커버리지) |
+| 버그/에러 발생 | `build-error-resolver` 자동 실행 |
+```
+
+#### 3. Team Mode 파이프라인
+```markdown
+### Team Mode
+| Trigger | Agents |
+|---------|--------|
+| {domain} 변경 | {domain-agent} → designer → code-reviewer |
+| 새 기능 추가 | tdd-master-qa (RED) → {domain-agent} (GREEN) → designer → code-reviewer → tdd-master-qa (QA) |
+| 기능 완성 후 | tdd-master-qa (QA pass 80%+) → code-simplifier |
+| 팀 병렬 작업 | 각 에이전트 worktree 격리 |
+| 모든 작업 | `record` 항상 병렬 실행 |
+```
+
+#### 4. 진행 보고 규칙 (CRITICAL)
+```markdown
+### 진행 보고 규칙 (CRITICAL — 먹통 금지)
+| 시점 | 보고 내용 |
+|------|----------|
+| 에이전트 디스패치 시 | "Agent X 시작: [작업 내용]" 유저에게 알림 |
+| 각 단계 완료 시 | 결과 요약 + 다음 단계 안내 |
+| 에러/블로커 발생 시 | 즉시 유저에게 보고 + 대안 제시 |
+| 긴 작업 (30초+) | 중간 상태 보고 |
+| 세션 재개 시 | 즉시 현재 상태 + 중단된 지점 보고 |
+| background agent 완료 시 | 결과 요약 유저에게 전달 |
+
+**원칙**: 유저가 "지금 뭐하는 중?" 이라고 물어봐야 하는 상황 금지.
+```
+
+#### 5. 기록 자동 수행 규칙 (CRITICAL)
+```markdown
+### 기록 자동 수행 규칙 (CRITICAL — 물어보지 말고 실행)
+| 트리거 | 자동 수행 | 대상 파일 |
+|--------|----------|----------|
+| 아키텍처/디자인 결정 | legacy 기록 작성 | `.claude/legacy/{date}-{seq}-{topic}.md` |
+| 유저 지시 | legacy 기록 작성 | `.claude/legacy/{date}-{seq}-{topic}.md` |
+| 브레인스토밍/스펙 확정 | agent-memory + legacy | 해당 파일 |
+| 구현 계획 확정 | plan 파일 작성 | `.claude/plans/{topic}.md` |
+| 작업 완료 | agent-memory TODO 업데이트 | 해당 agent-memory |
+| 세션 종료/compact | 미기록 항목 일괄 기록 | legacy + agent-memory |
+
+**원칙**: 유저에게 "기록 남길까요?" 물어보는 상황 금지.
+```
+
+#### 6. Memory Protocol
+```markdown
+### Memory Protocol
+1. 에이전트 디스패치 시 해당 memory 파일 **Read** 후 시작
+2. 작업 완료 시 새로운 결정사항/함정을 memory에 **Write**
+3. 세션 종료 전 memory 업데이트 확인
+```
+
+#### 7. 프론트엔드 디자인 우선 규칙 (프론트엔드 프로젝트만)
+```markdown
+### 프론트엔드 디자인 우선 규칙 (CRITICAL)
+1. **레이아웃** → 2. **디자인 시스템** → 3. **인터랙션** → 4. **컴포넌트** → 5. **콘텐츠**
+위반 금지: 컴포넌트부터 시작하면 레이아웃 깨짐 → 전면 재작업.
+```
 
 ### .claude/rules/coding-style.md
 Read `templates/rules/coding-{stack}.md` and adapt linter/formatter choices from interview.
@@ -127,6 +224,11 @@ Adapt commands to match the chosen linter/formatter/test tools.
 - `design.md` — design tokens, color system, spacing (no code)
 - `components.md` — component patterns + code guide
 
+### .claude/docs/references/ (if reference sites provided)
+- `{site-name}.md` — per-reference analysis (layout, scroll, nav, design, interaction)
+- `design-direction.md` — 반영할 패턴 요약 + 디자인 키워드 + 개발 순서
+- **이 디렉토리는 프로젝트 진행 중 언제든 추가 가능** (유저가 새 레퍼런스 제공 시)
+
 ### .claude/docs/testing/ (always generate)
 Read `templates/testing-strategy.md` and fill with interview answers (Stage 2 Q14).
 - `test-strategy.md` — test pyramid, coverage target, TDD rules
@@ -142,11 +244,6 @@ Read `templates/env-validation.md` and fill with chosen approach.
 
 ### .claude/legacy/_template.md
 Copy `templates/legacy/_template.md` as-is.
-Legacy 디렉토리는 프로젝트의 의사결정 기록 저장소:
-- 파일명: `{YYYYMMDD}-{NNN}-{slug}.md`
-- 아키텍처 변경, 라이브러리 교체, 패턴 변경 시 **커밋 전에** 반드시 작성
-- **세션 시작 시**: 기존 legacy 문서 Read — 과거 결정사항 파악 후 작업
-- `_template.md` 형식 준수
 
 ### .claude/agent-memory/agents.md
 Read `templates/agent-memory-{stack}.md` and fill stack-specific agents.
@@ -159,12 +256,8 @@ Create one file per identified domain agent from interview.
 **Backend projects**: create per-service agents (e.g., `auth-service.md`, `payment-service.md`).
 Fill with initial design decisions, key files, and empty pitfalls section.
 
-### .claude/plans/
-Plan 파일 저장소. `init-roadmap.md` 외에는 작업 중 자동 생성.
-- 파일명: `{YYYYMMDD}-{slug}.md`
-- 상태 관리: `draft` → `in-progress` → `done`
-- `done` 상태 plan은 삭제하지 않음 — 프로젝트 이력으로 보존
-- **세션 시작 시**: 기존 `in-progress` plan 파일 Read 후 이어서 작업
+### .claude/plans/ (empty directory)
+Claude creates plan files here during work. No initial file.
 
 ### .claude/docs/workflow/ (always generate)
 - `team-workflow.md` — 팀 작업 규칙:
@@ -184,19 +277,7 @@ Plan 파일 저장소. `init-roadmap.md` 외에는 작업 중 자동 생성.
 
 ---
 
-## Post-creation Checklist
-
-생성 완료 후 다음을 검증:
-
-1. **CLAUDE.md** — `## Plans` / `## Legacy` 섹션 존재 + Read 프로토콜 명시
-2. **agents.md** — Auto-Dispatch에 plan/legacy 트리거 행 존재
-3. **agents.md** — Plan 관리 규칙 + Legacy 규칙 섹션 존재
-4. **`.claude/plans/`** — `init-roadmap.md` 생성됨
-5. **`.claude/legacy/`** — `_template.md` 생성됨
-
-누락 항목 발견 시 즉시 생성.
-
-## Post-creation Report
+## Post-creation
 
 Report all created files with one-line description each.
 Show the roadmap summary from `.claude/plans/init-roadmap.md`.

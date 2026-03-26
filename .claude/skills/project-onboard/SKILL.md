@@ -40,70 +40,29 @@ Also ask:
    - Backend: per-service agents (e.g., `auth-service`, `payment-service`)
    - Each gets a separate memory file in `.claude/agent-memory/`
 
+### Step 2.5: Reference & Design Direction (Frontend projects)
+*(Skip for backend-only. 나중에 언제든 `/reference-update`로 추가 가능)*
+
+8r. **Reference sites** — 벤치마크 URL 있나요? (없으면 skip)
+   - URL 제공 시: WebFetch로 분석 → `docs/references/` 에 저장
+   - 분석 항목: 레이아웃, 스크롤 패턴, 네비, 색상/타이포, 인터랙션, 프로젝트 구조(brief/detail)
+   - **반영할 패턴** vs **참고만 할 패턴** 명시 기록
+
+9r. **Design direction** — 키워드 or 무드보드? (미니멀, 다크, 글래스모피즘 등)
+
+10r. **Design priority** — 개발 순서 확인:
+   - 권장: **레이아웃 → 디자인 시스템 → 인터랙션 → 컴포넌트 → 콘텐츠**
+   - 컴포넌트부터 시작하면 전체 흐름이 깨지므로 레이아웃 우선 필수
+
 ## Step 3: Scan Existing Structure
 
 After interview, scan for:
 - Existing `.claude/` directory (avoid overwriting)
+- Existing `docs/references/` (레퍼런스 분석 파일)
 - `docs/` or `README.md` for additional context
 - Main entry points, key modules
 
 If `.claude/` already exists: confirm before overwriting any files.
-
-## Step 3.5: History Recovery (기존 프로젝트 이력 복원)
-
-기존 프로젝트는 `.claude/plans/`와 `.claude/legacy/`가 비어있을 수 있다.
-커밋 히스토리에서 프로젝트 맥락을 복원한다.
-
-### 3.5.1 커밋 로그 분석
-```bash
-# 최근 50개 커밋 요약
-git log --oneline -50
-
-# 주요 아키텍처 변경 탐지 (대규모 변경 커밋)
-git log --shortstat -20 --format="%h %s" | head -60
-
-# 의존성 변경 이력
-git log --oneline --follow -- package.json pyproject.toml requirements.txt | head -20
-
-# 디렉토리 구조 변경 이력
-git log --diff-filter=A --name-only --format="%h %s" -- "*.config.*" "*/index.*" | head -30
-```
-
-### 3.5.2 Legacy 자동 생성
-커밋 로그에서 다음 패턴을 감지하면 `.claude/legacy/` 문서를 자동 생성:
-
-| 커밋 패턴 | 생성할 Legacy |
-|-----------|--------------|
-| 프레임워크/라이브러리 마이그레이션 커밋 | `{date}-001-migrate-{from}-to-{to}.md` |
-| 대규모 리팩토링 (10+ 파일 변경) | `{date}-002-refactor-{slug}.md` |
-| 의존성 교체 (package.json 주요 변경) | `{date}-003-replace-{old}-with-{new}.md` |
-| 디렉토리 구조 변경 | `{date}-004-restructure-{slug}.md` |
-
-각 legacy 문서에 포함할 내용:
-- **현상**: 커밋 메시지 + diff 요약
-- **의사결정**: 커밋 컨텍스트에서 추론
-- **참조**: 해당 커밋 해시
-
-### 3.5.3 Plan 상태 복원
-```bash
-# 미완성 기능 탐지 (TODO, FIXME, WIP 커밋)
-git log --oneline --grep="WIP\|TODO\|wip\|fixme" -10
-
-# 최근 활발한 작업 영역
-git log --name-only --format="" -10 | sort | uniq -c | sort -rn | head -10
-```
-
-미완성 기능이 발견되면:
-- `.claude/plans/{date}-recover-{feature}.md` 생성
-- 상태: `in-progress`
-- 관련 파일 목록 + 남은 작업 추론
-
-### 3.5.4 결과 보고
-복원된 이력을 유저에게 보고:
-> "커밋 로그에서 N개의 아키텍처 결정과 M개의 진행 중 작업을 발견했습니다."
-> - Legacy: {생성된 문서 목록}
-> - Plans: {복원된 plan 목록}
-> "내용을 검토하고 수정이 필요하면 알려주세요."
 
 ## Step 4: Generate .claude/
 
@@ -111,6 +70,18 @@ Use the same output structure as `/project-init`.
 Read templates from `~/.claude/skills/project-init/templates/`.
 
 **All files ≤ 150 lines. Split if needed.**
+
+### `.claude/rules/agents.md` — 반드시 포함 섹션
+`/project-init`의 agents.md 생성 규칙과 동일. 아래 7개 섹션 필수:
+1. **활성 팀 구성 테이블** — 인터뷰 도메인 에이전트 + main/designer/record/code-reviewer/tdd-master-qa
+2. **Auto-Dispatch 트리거 테이블** — 각 에이전트 자동 실행 조건
+3. **Team Mode 파이프라인** — 도메인 변경 시 에이전트 체인
+4. **진행 보고 규칙** — 먹통 금지, 디스패치/완료/에러 시 유저 보고
+5. **기록 자동 수행 규칙** — 결정/지시/완료 시 legacy/memory 즉시 기록 (물어보지 말 것)
+6. **Memory Protocol** — 디스패치 시 Read, 완료 시 Write
+7. **프론트엔드 디자인 우선 규칙** — 레이아웃→디자인시스템→인터랙션→컴포넌트→콘텐츠 (프론트엔드만)
+
+상세 내용은 `/project-init` SKILL.md의 `.claude/rules/agents.md` 섹션 참조.
 
 ```
 {project}/
@@ -125,6 +96,7 @@ Read templates from `~/.claude/skills/project-init/templates/`.
     │   ├── constraints.md
     │   ├── testing/
     │   │   └── test-strategy.md
+    │   ├── references/       (if reference sites provided)
     │   ├── backend/          (if applicable)
     │   └── frontend/         (if applicable)
     ├── plans/
@@ -153,27 +125,16 @@ Generate `.claude/docs/workflow/team-workflow.md`:
 1. **Worktree 격리 정책**: 팀 병렬 작업 시 각 에이전트 worktree 사용 필수
 2. **오케스트레이터 역할 정의**: 유저와 직접 소통, sub-agent 결과 리뷰/머지
 3. **QA 검증 파이프라인**:
-   - 구현 완료 → `qa-verifier` 디스패치 (테스트 스펙 대비 TC 커버리지 검증)
+   - 구현 전 → `tdd-master-qa` 디스패치 (RED: TC 먼저 작성)
+   - 구현 완료 → `tdd-master-qa` 디스패치 (GREEN 확인 + 커버리지 80%+ 검증)
    - 검증 통과 → 최적화 단계 진입 허용
-   - 검증 실패 → 누락 TC 목록 생성 → `tdd-guide`에 전달
+   - 검증 실패 → 누락 TC 목록 생성 → `tdd-master-qa`가 직접 작성
 4. **최적화 게이트**: QA 통과 전 `code-simplifier`/`perf-reviewer` 실행 금지
 5. **회귀 방지**: 최적화 후 테스트 재실행 필수
-
-## Step 7: Plan/Legacy 초기화 확인
-
-생성된 `.claude/` 구조에 다음이 포함되었는지 최종 확인:
-
-1. **`.claude/plans/`** — Step 3.5에서 복원된 plan 파일 또는 빈 디렉토리
-2. **`.claude/legacy/`** — Step 3.5에서 복원된 legacy 파일 + `_template.md`
-3. **`CLAUDE.md`** — Plans/Legacy 섹션에 세션 시작 시 Read 프로토콜 포함
-4. **`.claude/rules/agents.md`** — Auto-Dispatch 테이블에 plan/legacy 트리거 포함
-
-누락된 항목이 있으면 자동 생성.
 
 ## Post-creation
 
 Report all created/skipped files.
-Report recovered history (legacy/plan files from commit log).
 Remind: commit `.claude/` with the project for portability.
 
 ## Future Extensions
